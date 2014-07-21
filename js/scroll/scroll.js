@@ -11,8 +11,7 @@
         .directive("ngScrollPlace", ['$rootScope', '$timeout', function ($rootScope, $timeout) {
             return {
                 scope: {
-                    ngScrollPlace: "=?",
-                    scrollProcessing: "&",
+                    ngScrollPlace: "&",
                     scrollSource: "@",
                     scrollDisabled: "=?",
                     scrollAfterDeadline: "&",
@@ -28,7 +27,7 @@
                         var contenerPath = dH + scrollTop; //прошедший путь
                         if (scrollTop + 200 >= allH - dH && scope.scrollDisabled) {
                             scope.scrollDisabled = false;
-                            scope.scrollProcessing();
+                            scope.ngScrollPlace();
                         }
                         if (scrollTop > scope.scrollHeightWatch && !big) {
                             scope.scrollAfterDeadline();
@@ -50,7 +49,7 @@
                             $timeout.cancel(timer);//ставим задержку для уменьшения расчетов
                             timer = $timeout(scrollHandler, 100);
                         });
-                        scope.scrollProcessing();
+                        scope.ngScrollPlace();
                     };
                     $timeout(function () {
                         scope.scrollDisabled = true;
