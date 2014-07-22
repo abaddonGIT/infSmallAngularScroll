@@ -8,12 +8,17 @@
 </head>
 <body ng-controller="baseController">
 <div id="wrapper">
-   <div id="scroll" ng-scroll-place="scroll()" scroll-source="true" scroll-disabled="accept">
+    <!--<div id="scroll" ng-scroll-place scroll-source="true" scroll-processing="scroll()" scroll-disabled="accept">
+         <div ng-repeat="item in scrollItems">
+             {{item.pagetitle}}
+         </div>
+     </div>-->
+    <div id="scroll" ng-scroll-place>
         <div ng-repeat="item in scrollItems">
             {{item.pagetitle}}
         </div>
     </div>
-    <div id="test" scroll-height-watch="500" ng-scroll-place="scroll2()" scroll-disabled="accept2" scroll-after-deadline="after()" scroll-before-deadline="before()">
+    <div id="scroll2" ng-scroll-place="two">
         <div ng-repeat="item in scrollItems2">
             {{item.pagetitle}}
         </div>
