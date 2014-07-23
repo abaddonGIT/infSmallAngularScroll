@@ -11,14 +11,13 @@
         .value("$scrollInstance", {})
         .directive("ngScrollPlace", ['$rootScope', '$timeout', '$scrollInstance', '$interval', function ($rootScope, $timeout, $scrollInstance, $interval) {
             return {
-                scope: {
-                    scrollDisabled: "=?"
-                },
+                scope: {},
                 link: function (scope, elem, attr) {
                     var name = attr.ngScrollPlace || 'first';
                     var timer = $interval(function () {
                         var instance = $scrollInstance[name];
                         if (instance) {
+                            delete $scrollInstance[name];
                             instance.defer.resolve({'scope': scope, 'elem': elem});
                             $interval.cancel(timer);
                         }
@@ -27,7 +26,7 @@
             };
         } ]).factory('$infinityScroll', ['$rootScope', '$scrollInstance', '$q', '$timeout', function ($rootScope, $scrollInstance, $q, $timeout) {
             var InfScroll = function (options) {
-                var contener, config, elemSource, dH, scrollTimer, scrollTop, wH;
+                var contener, config, elemSource, dH, scrollTimer, scrollTop, wH, big = false, small = true;
                 if (!(this instanceof InfScroll)) {
                     return new InfScroll(options);
                 }
@@ -44,13 +43,15 @@
                     heightWatch: 500,
                     external: true
                 }, options);
-
                 var result = function () {
                     this.accept = false;
                     var resultDefer = $q.defer();
-                    this.result(function (flag) {resultDefer.resolve(flag);});
+                    this.result(function (flag) {
+                        resultDefer.resolve(flag);
+                    });
                     resultDefer.promise.then(function (flag) {
                         flag ? this.accept = true : this.accept = false;
+                        this.trigger("after:scroll", this);
                     }.bind(this));
                 };
                 var handler = function () {
@@ -58,6 +59,18 @@
                     wH = Math.max(elemSource.scrollHeight, dH);
                     if (scrollTop + 200 >= wH - dH && this.accept) {
                         result.call(this);
+                    }
+                    if (this.config.heightWatch) {
+                        if (scrollTop >= this.config.heightWatch && !big) {
+                            this.trigger('after:deadline', scrollTop);
+                            big = true;
+                            small = false;
+                        }
+                        if (scrollTop < this.config.heightWatch && !small) {
+                            this.trigger('prev:deadline', scrollTop);
+                            big = false;
+                            small = true;
+                        }
                     }
                 };
                 var startScroll = function (directive) {
@@ -78,8 +91,8 @@
                     result.call(this);
                 };
                 $scrollInstance[this.config.name] = this;
-
                 this.defer.promise.then(function (directive) {
+                    this.scope = directive.scope;
                     startScroll.call(this, directive);
                 }.bind(this));
             };
@@ -97,6 +110,6 @@
                 start: function (options) {
                     return InfScroll(options);
                 }
-            }
+            };
         }]);
 })(angular, window, document);
