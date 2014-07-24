@@ -14,14 +14,15 @@
                 scope: {},
                 link: function (scope, elem, attr) {
                     var name = attr.ngScrollPlace || 'first';
-                    var timer = $interval(function () {
-                        var instance = $scrollInstance[name];
-                        if (instance) {
+                    var watch = scope.$watch(function () {
+                        return $scrollInstance[name];
+                    }, function (newVal) {
+                        if (newVal) {
                             delete $scrollInstance[name];
-                            instance.defer.resolve({'scope': scope, 'elem': elem});
-                            $interval.cancel(timer);
+                            newVal.defer.resolve({'scope': scope, 'elem': elem});
+                            watch();
                         }
-                    }, 100);
+                    });
                 }
             };
         } ]).factory('$infinityScroll', ['$rootScope', '$scrollInstance', '$q', '$timeout', function ($rootScope, $scrollInstance, $q, $timeout) {
