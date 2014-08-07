@@ -60,6 +60,7 @@
 </head>
 <body ng-controller="baseController">
 <div id="wrapper">
+    <button ng-click="update()">Обновить</button>
     <div id="scroll" ng-scroll-place>
         <div ng-repeat="item in scrollItems">
             {{item.pagetitle}}

@@ -20,6 +20,11 @@ app.controller("baseController", ['$scope', '$http', '$rootScope', '$infinityScr
             }
         });
     };
+    $scope.update = function () {
+        $scope.scrollItems = [];
+        offset = 0;
+        scroll.update();
+    };
     scroll.bind("after:scroll", function (event, sc) {
        console.log(sc);
     });

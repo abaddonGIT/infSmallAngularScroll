@@ -8,26 +8,27 @@
 (function (an, w, d) {
     "use strict";
     var infinityScroll = an.module("infinityScroll", [])
-        .value("$scrollInstance", {})
-        .directive("ngScrollPlace", ['$rootScope', '$timeout', '$scrollInstance', '$interval', function ($rootScope, $timeout, $scrollInstance, $interval) {
+        .value("$defers", {})
+        .value("$old", {})
+        .directive("ngScrollPlace", ['$rootScope', '$timeout', '$defers', '$interval', function ($rootScope, $timeout, $defers, $interval) {
             return {
                 scope: {},
                 link: function (scope, elem, attr) {
                     var name = attr.ngScrollPlace || 'first';
                     var watch = scope.$watch(function () {
-                        return $scrollInstance[name];
+                        return $defers[name];
                     }, function (newVal) {
                         if (newVal) {
-                            delete $scrollInstance[name];
-                            newVal.defer.resolve({'scope': scope, 'elem': elem});
+                            delete $defers[name];
+                            newVal.resolve({'scope': scope, 'elem': elem});
                             watch();
                         }
                     });
                 }
             };
-        } ]).factory('$infinityScroll', ['$rootScope', '$scrollInstance', '$q', '$timeout', function ($rootScope, $scrollInstance, $q, $timeout) {
+        } ]).factory('$infinityScroll', ['$rootScope', '$defers', '$q', '$timeout', '$old', function ($rootScope, $defers, $q, $timeout, $old) {
             var InfScroll = function (options) {
-                var contener, config, elemSource, dH, scrollTimer, scrollTop, wH, big = false, small = true;
+                var contener, config, elemSource, dH, scrollTimer, scrollTop, wH, big = false, small = true, that = this;
                 if (!(this instanceof InfScroll)) {
                     return new InfScroll(options);
                 }
@@ -56,7 +57,7 @@
                     }.bind(this));
                 };
                 var handler = function () {
-                    scrollTop = contener[0].pageYOffset || elemSource.scrollTop;
+                    scrollTop = contener.pageYOffset || elemSource.scrollTop;
                     wH = Math.max(elemSource.scrollHeight, dH);
                     if (scrollTop + 200 >= wH - dH && this.accept) {
                         result.call(this);
@@ -76,26 +77,34 @@
                 };
                 var startScroll = function (directive) {
                     if (config.external) {//Выбираем контенер со скролом
-                        contener = an.element(w);
+                        contener = w;
                         elemSource = d.documentElement;
                     } else {
-                        contener = directive.elem;
+                        contener = directive.elem[0];
                         elemSource = directive.elem[0];
                     }
                     dH = elemSource.clientHeight;
-                    contener.off("scroll").on("scroll", function () {
-                        $timeout.cancel(scrollTimer);
-                        scrollTimer = $timeout(function () {//Задержка скрола
-                            handler.call(this);
-                        }.bind(this), 100);
-                    }.bind(this));
+                    if ($old) {
+                        contener.removeEventListener('scroll', $old[this.config.name], false);
+                        delete $old[this.config.name];
+                        contener.addEventListener('scroll', that.handler, false);
+                    } else {
+                        contener.addEventListener('scroll', that.handler, false);
+                    }
+                    $old[this.config.name] = that;
                     result.call(this);
                 };
-                $scrollInstance[this.config.name] = this;
+                $defers[this.config.name] = this.defer;
                 this.defer.promise.then(function (directive) {
                     this.scope = directive.scope;
                     startScroll.call(this, directive);
                 }.bind(this));
+                this.handler = function () {
+                    $timeout.cancel(scrollTimer);
+                    scrollTimer = $timeout(function () {//Задержка скрола
+                        handler.call(this);
+                    }.bind(that), 100);
+                };
             };
             InfScroll.prototype = {
                 bind: function (event, handler) {
@@ -105,6 +114,11 @@
                 trigger: function (event) {
                     arguments[0] = event + ':' + this.timestamp;
                     $rootScope.$broadcast.apply($rootScope, arguments);
+                },
+                update: function () {
+                    this.result(function (flag) {
+                        flag ? this.accept = true : this.accept = false;
+                    }.bind(this));
                 }
             };
             return {
