@@ -5,6 +5,7 @@
  * Time: 13:10
  * Description: infinity scroll on angularjs
  */
+/*global angular, window, document*/
 (function (an, w, d) {
     "use strict";
     var infinityScroll = an.module("infinityScroll", [])
